@@ -30,13 +30,13 @@ func (this *Node) InorderString(seperate string) string {
 	return strings.Join(stringSlice, seperate)
 }
 
-func (this *Node) inorder(apply func(v int)) {
+func (this *Node) Inorder(apply func(v int)) {
 	if this.Left != nil {
-		this.Left.inorder(apply)
+		this.Left.Inorder(apply)
 	}
 	apply(this.Val)
 	if this.Right != nil {
-		this.Right.inorder(apply)
+		this.Right.Inorder(apply)
 	}
 }
 
@@ -117,7 +117,7 @@ func (this *Node) Max() int {
 
 func (this *Node) SortedSlice() []int {
 	var ret []int
-	this.inorder(func(v int) {
+	this.Inorder(func(v int) {
 		ret = append(ret, v)
 	})
 	return ret
