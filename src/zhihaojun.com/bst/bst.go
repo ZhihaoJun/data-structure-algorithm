@@ -3,12 +3,15 @@ package bst
 import (
 	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 )
 
 type Node struct {
-	Val   int
-	Left  *Node
-	Right *Node
+	Val     int
+	Left    *Node
+	Right   *Node
+	rwMutex sync.RWMutex
 }
 
 func NewFromInts(l []int) *Node {
@@ -16,7 +19,7 @@ func NewFromInts(l []int) *Node {
 		Val: l[0],
 	}
 	for i := 1; i < len(l); i++ {
-		root.Insert(l[i])
+		root.insert(l[i])
 	}
 	return root
 }
@@ -31,23 +34,35 @@ func (this *Node) InorderString(seperate string) string {
 }
 
 func (this *Node) Inorder(apply func(v int)) {
+	this.rwMutex.RLock()
+	defer this.rwMutex.RUnlock()
+	this.inorder(apply)
+}
+
+func (this *Node) inorder(apply func(v int)) {
 	if this.Left != nil {
-		this.Left.Inorder(apply)
+		this.Left.inorder(apply)
 	}
 	apply(this.Val)
 	if this.Right != nil {
-		this.Right.Inorder(apply)
+		this.Right.inorder(apply)
 	}
 }
 
 func (this *Node) Insert(v int) *Node {
+	this.rwMutex.Lock()
+	defer this.rwMutex.Unlock()
+	return this.insert(v)
+}
+
+func (this *Node) insert(v int) *Node {
 	if v < this.Val {
 		if this.Left == nil {
 			this.Left = &Node{
 				Val: v,
 			}
 		} else {
-			this.Left.Insert(v)
+			this.Left.insert(v)
 		}
 	} else {
 		if this.Right == nil {
@@ -55,10 +70,16 @@ func (this *Node) Insert(v int) *Node {
 				Val: v,
 			}
 		} else {
-			this.Right.Insert(v)
+			this.Right.insert(v)
 		}
 	}
 	return this
+}
+
+func (this *Node) Delete(v int) *Node {
+	this.rwMutex.Lock()
+	defer this.rwMutex.Unlock()
+	return this.delete(v)
 }
 
 func (this *Node) deleteNode(n *Node) *Node {
@@ -66,28 +87,34 @@ func (this *Node) deleteNode(n *Node) *Node {
 		return n.Right
 	} else {
 		l := n.Left
-		rightMost := l.RightMost()
+		rightMost := l.rightMost()
 		rightMost.Right = n.Right
 		return l
 	}
 }
 
-func (this *Node) Delete(v int) *Node {
+func (this *Node) delete(v int) *Node {
 	if this.Val == v {
 		this = this.deleteNode(this)
 	} else if v < this.Val {
 		if this.Left != nil {
-			this.Left = this.Left.Delete(v)
+			this.Left = this.Left.delete(v)
 		}
 	} else {
 		if this.Right != nil {
-			this.Right = this.Right.Delete(v)
+			this.Right = this.Right.delete(v)
 		}
 	}
 	return this
 }
 
-func (this *Node) LeftMost() *Node {
+func (this *Node) LeftMode() *Node {
+	this.rwMutex.RLock()
+	defer this.rwMutex.RUnlock()
+	return this.leftMost()
+}
+
+func (this *Node) leftMost() *Node {
 	parent := this
 	l := this.Left
 	for l != nil {
@@ -98,6 +125,12 @@ func (this *Node) LeftMost() *Node {
 }
 
 func (this *Node) RightMost() *Node {
+	this.rwMutex.RLock()
+	defer this.rwMutex.RUnlock()
+	return this.rightMost()
+}
+
+func (this *Node) rightMost() *Node {
 	parent := this
 	r := this.Right
 	for r != nil {
@@ -108,17 +141,33 @@ func (this *Node) RightMost() *Node {
 }
 
 func (this *Node) Min() int {
-	return this.LeftMost().Val
+	this.rwMutex.RLock()
+	defer this.rwMutex.RUnlock()
+	return this.leftMost().Val
 }
 
 func (this *Node) Max() int {
-	return this.RightMost().Val
+	this.rwMutex.RLock()
+	defer this.rwMutex.RUnlock()
+	return this.rightMost().Val
 }
 
 func (this *Node) SortedSlice() []int {
+	this.rwMutex.RLock()
+	defer this.rwMutex.RUnlock()
 	var ret []int
-	this.Inorder(func(v int) {
+	this.inorder(func(v int) {
 		ret = append(ret, v)
 	})
 	return ret
+}
+
+func (this *Node) Num() int {
+	this.rwMutex.RLock()
+	defer this.rwMutex.RUnlock()
+	var ret int64 = 0
+	this.inorder(func(v int) {
+		ret = atomic.AddInt64(&ret, 1)
+	})
+	return int(ret)
 }

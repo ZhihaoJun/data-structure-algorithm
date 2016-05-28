@@ -2,6 +2,8 @@ package bst
 
 import (
 	"fmt"
+	"math/rand"
+	"sync"
 	"testing"
 )
 
@@ -95,6 +97,52 @@ func TestDelete(t *testing.T) {
 	if inorder != "2 7 9 30 40" {
 		t.Error("expect delete tree inorder is 2 7 9 30 40 but get")
 		t.Error(inorder)
+	} else {
+		fmt.Println("PASS")
+	}
+}
+
+func insertAndPrint(root *Node, v int) {
+	root.Insert(v)
+	fmt.Println(root.InorderString(","))
+}
+
+func deleteAndPrint(root *Node, v int) {
+	root.Delete(v)
+	fmt.Println(root.InorderString(","))
+}
+
+func TestThreadSafe(t *testing.T) {
+	fmt.Println("testing thread safe")
+	root := &Node{Val: 0}
+	n := 10
+	wg := sync.WaitGroup{}
+	wg.Add(n + n)
+	for i := 0; i < n; i++ {
+		go func() {
+			defer wg.Done()
+			v := rand.Intn(200)
+			insertAndPrint(root, v)
+		}()
+		go func() {
+			defer wg.Done()
+			v := rand.Intn(200)
+			deleteAndPrint(root, v)
+		}()
+	}
+	wg.Wait()
+}
+
+func TestNum(t *testing.T) {
+	fmt.Println("testing num")
+	root := &Node{}
+	n := 400
+	for i := 1; i < n; i++ {
+		root.Insert(rand.Intn(200))
+	}
+	m := root.Num()
+	if m != n {
+		t.Errorf("expect get num is %d but get %d\n", n, m)
 	} else {
 		fmt.Println("PASS")
 	}
