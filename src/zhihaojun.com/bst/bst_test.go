@@ -147,3 +147,10 @@ func TestNum(t *testing.T) {
 		fmt.Println("PASS")
 	}
 }
+
+func BenchmarkInsert(b *testing.B) {
+	root := &Node{}
+	for i := 0; i < b.N; i++ {
+		root.Insert(i)
+	}
+}
