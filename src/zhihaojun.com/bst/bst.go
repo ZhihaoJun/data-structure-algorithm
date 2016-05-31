@@ -76,6 +76,18 @@ func (this *Node) insert(v int) *Node {
 	return this
 }
 
+func (this *Node) DeleteAll(v int) *Node {
+	this.rwMutex.Lock()
+	defer this.rwMutex.Unlock()
+	for this.has(v) {
+		this = this.delete(v)
+	}
+	return this
+}
+
+/*
+please use root = root.Delete(v) to make sure delete correct
+*/
 func (this *Node) Delete(v int) *Node {
 	this.rwMutex.Lock()
 	defer this.rwMutex.Unlock()
@@ -94,8 +106,9 @@ func (this *Node) deleteNode(n *Node) *Node {
 }
 
 func (this *Node) delete(v int) *Node {
+	ret := this
 	if this.Val == v {
-		this = this.deleteNode(this)
+		ret = this.deleteNode(this)
 	} else if v < this.Val {
 		if this.Left != nil {
 			this.Left = this.Left.delete(v)
@@ -105,7 +118,7 @@ func (this *Node) delete(v int) *Node {
 			this.Right = this.Right.delete(v)
 		}
 	}
-	return this
+	return ret
 }
 
 func (this *Node) LeftMode() *Node {
@@ -170,4 +183,25 @@ func (this *Node) Num() int {
 		ret = atomic.AddInt64(&ret, 1)
 	})
 	return int(ret)
+}
+
+func (this *Node) Has(v int) bool {
+	this.rwMutex.RLock()
+	defer this.rwMutex.RUnlock()
+	return this.has(v)
+}
+
+func (this *Node) has(v int) bool {
+	if v < this.Val {
+		if this.Left != nil {
+			return this.Left.has(v)
+		}
+	} else if v == this.Val {
+		return true
+	} else {
+		if this.Right != nil {
+			return this.Right.has(v)
+		}
+	}
+	return false
 }
