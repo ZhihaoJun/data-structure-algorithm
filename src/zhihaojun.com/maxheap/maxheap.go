@@ -75,6 +75,15 @@ func (mh *MaxHeap) Extract() int {
 	return ret
 }
 
+func (mh *MaxHeap) Sorted() []int {
+	nlen := len(mh.val)
+	ret := []int{}
+	for i := 0; i < nlen; i++ {
+		ret = append(ret, mh.Extract())
+	}
+	return ret
+}
+
 func NewMaxHeap(val []int) *MaxHeap {
 	mh := &MaxHeap{}
 	for _, v := range val {
